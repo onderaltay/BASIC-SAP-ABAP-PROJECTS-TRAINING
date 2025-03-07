@@ -1,0 +1,52 @@
+*&---------------------------------------------------------------------*
+*& Report ZON_EXCEL_01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZON_EXCEL_01.
+
+TYPES:BEGIN OF GTY_ITAB,
+  ID TYPE CHAR30,
+  ISIM TYPE CHAR30,
+  SOYISIM TYPE CHAR30,
+  KURUM TYPE CHAR30,
+  DEPARTMAN TYPE CHAR30,
+  POZISYON TYPE CHAR30,
+  CINSIYET TYPE CHAR30,
+  END OF GTY_ITAB.
+
+DATA: GT_ITAB TYPE TABLE OF GTY_ITAB,
+      GT_RAW_DATA TYPE TRUXS_T_TEXT_DATA.
+
+PARAMETERS: P_FILE TYPE RLGRAP-FILENAME.
+
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR P_FILE.
+
+CALL FUNCTION 'F4_FILENAME'
+ EXPORTING
+   FIELD_NAME          = 'P_FILE'
+ IMPORTING
+   FILE_NAME           = P_FILE.
+
+
+START-OF-SELECTION.
+
+CALL FUNCTION 'TEXT_CONVERT_XLS_TO_SAP'
+  EXPORTING
+*   I_FIELD_SEPERATOR          =
+*   I_LINE_HEADER              =
+    I_TAB_RAW_DATA             = GT_RAW_DATA
+    I_FILENAME                 = P_FILE
+  TABLES
+    I_TAB_CONVERTED_DATA       = GT_ITAB
+ EXCEPTIONS
+   CONVERSION_FAILED          = 1
+   OTHERS                     = 2
+          .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+  ELSE.
+ENDIF.
+
+BREAK-POINT.
