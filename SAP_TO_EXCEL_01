@@ -1,0 +1,114 @@
+*&---------------------------------------------------------------------*
+*& Report ZON_EXCEL_03
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZON_EXCEL_03.
+
+TYPES: BEGIN OF GTY_HEADER,
+  LINE TYPE CHAR30,
+  END OF GTY_HEADER.
+
+DATA: GV_FILENAME TYPE STRING.
+DATA: GT_STOCK TYPE TABLE OF ZON_STOK_LIST.
+DATA: GT_HEADER TYPE TABLE OF GTY_HEADER,
+      GS_HEADER TYPE GTY_HEADER.
+
+PARAMETERS: P_PATH TYPE STRING.
+
+
+  AT SELECTION-SCREEN ON VALUE-REQUEST FOR P_PATH.
+    CALL METHOD CL_GUI_FRONTEND_SERVICES=>DIRECTORY_BROWSE
+*      EXPORTING
+*        WINDOW_TITLE         =     " Title of Browsing Window
+*        INITIAL_FOLDER       =     " Start Browsing Here
+      CHANGING
+        SELECTED_FOLDER      = P_PATH    " Folder Selected By User
+      EXCEPTIONS
+        CNTL_ERROR           = 1
+        ERROR_NO_GUI         = 2
+        NOT_SUPPORTED_BY_GUI = 3
+        OTHERS               = 4
+      .
+    IF SY-SUBRC <> 0.
+*     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*                WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ENDIF.
+
+
+
+START-OF-SELECTION.
+
+SELECT * FROM ZON_STOK_LIST INTO TABLE GT_STOCK.
+
+CONCATENATE P_PATH
+            '/'
+            SY-DATUM
+            '-'
+            SY-UZEIT
+            '.XLS'
+INTO GV_FILENAME.
+
+GS_HEADER-LINE = 'CLIENT'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK NUMARASI'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK ADI'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK ADED#'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK KONUMU'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK F#YATI'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'STOK MAL#YET#'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'SATI# F#YATI'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'SATI# GRUBU'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'ÜRÜN T#P#'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'ÜRÜN GRUBU'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'SATILMI# M#KTAR'.
+APPEND GS_HEADER TO GT_HEADER.
+GS_HEADER-LINE = 'SATILACAK M#KTAR'.
+APPEND GS_HEADER TO GT_HEADER.
+
+CALL FUNCTION 'GUI_DOWNLOAD'
+  EXPORTING
+    FILENAME                  = GV_FILENAME    " Name of file
+    FILETYPE                  = 'ASC'    " File Type (ASC or BIN)
+    WRITE_FIELD_SEPARATOR     = 'X'    " Separate Columns by Tabs in Case of ASCII Download
+  TABLES
+    DATA_TAB                  = GT_STOCK    " Transfer table
+    FIELDNAMES                = GT_HEADER    " Field Names for the 'DBF' File Type
+  EXCEPTIONS
+    FILE_WRITE_ERROR          = 1
+    NO_BATCH                  = 2
+    GUI_REFUSE_FILETRANSFER   = 3
+    INVALID_TYPE              = 4
+    NO_AUTHORITY              = 5
+    UNKNOWN_ERROR             = 6
+    HEADER_NOT_ALLOWED        = 7
+    SEPARATOR_NOT_ALLOWED     = 8
+    FILESIZE_NOT_ALLOWED      = 9
+    HEADER_TOO_LONG           = 10
+    DP_ERROR_CREATE           = 11
+    DP_ERROR_SEND             = 12
+    DP_ERROR_WRITE            = 13
+    UNKNOWN_DP_ERROR          = 14
+    ACCESS_DENIED             = 15
+    DP_OUT_OF_MEMORY          = 16
+    DISK_FULL                 = 17
+    DP_TIMEOUT                = 18
+    FILE_NOT_FOUND            = 19
+    DATAPROVIDER_EXCEPTION    = 20
+    CONTROL_FLUSH_ERROR       = 21
+    OTHERS                    = 22
+  .
+IF SY-SUBRC <> 0.
+* MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*            WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+ENDIF.
