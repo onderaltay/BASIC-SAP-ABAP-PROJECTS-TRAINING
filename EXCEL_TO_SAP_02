@@ -1,0 +1,74 @@
+*&---------------------------------------------------------------------*
+*& Report ZON_EXCEL_02
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZON_EXCEL_02.
+
+TYPES: BEGIN OF GTY_TABLE,
+  ID TYPE CHAR30,
+  ISIM TYPE CHAR30,
+  SOYISIM TYPE CHAR30,
+  KURUM TYPE CHAR30,
+  DEPARTMAN TYPE CHAR30,
+  POZISYON TYPE CHAR30,
+  CINSIYET TYPE CHAR30,
+END OF GTY_TABLE.
+
+
+
+
+DATA: GT_INTERN TYPE TABLE OF ALSMEX_TABLINE,
+      GS_INTERN TYPE ALSMEX_TABLINE,
+      GT_ITABLE TYPE TABLE OF GTY_TABLE,
+      GS_ITABLE TYPE GTY_TABLE.
+
+PARAMETERS: P_FILE TYPE RLGRAP-FILENAME.
+
+FIELD-SYMBOLS: <GFS_VALUE> TYPE ANY.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR P_FILE.
+CALL FUNCTION 'F4_FILENAME'
+ IMPORTING
+   FILE_NAME           = P_FILE.
+
+
+
+START-OF-SELECTION.
+
+CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
+  EXPORTING
+    FILENAME                      = P_FILE
+    I_BEGIN_COL                   = 1
+    I_BEGIN_ROW                   = 2
+    I_END_COL                     = 7
+    I_END_ROW                     = 600
+  TABLES
+    INTERN                        = GT_INTERN
+ EXCEPTIONS
+   INCONSISTENT_PARAMETERS       = 1
+   UPLOAD_OLE                    = 2
+   OTHERS                        = 3
+          .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+LOOP AT GT_INTERN INTO GS_INTERN.
+ASSIGN COMPONENT GS_INTERN-COL OF STRUCTURE GS_ITABLE TO <GFS_VALUE>.
+<GFS_VALUE> = GS_INTERN-VALUE.
+AT END OF ROW.
+  APPEND GS_ITABLE TO GT_ITABLE.
+ENDAT.
+ENDLOOP.
+
+
+
+
+
+
+
+
+
+
+BREAK-POINT.
