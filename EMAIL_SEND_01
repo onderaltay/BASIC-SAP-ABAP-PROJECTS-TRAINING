@@ -1,0 +1,49 @@
+*&---------------------------------------------------------------------*
+*& Report ZON_EMAIL_01
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZON_EMAIL_01.
+
+
+DATA: GO_GBT         TYPE REF TO CL_GBT_MULTIRELATED_SERVICE,
+      GO_BCS         TYPE REF TO CL_BCS,
+      GO_DOC_BCS     TYPE REF TO CL_DOCUMENT_BCS,
+      GO_RECIPIENT   TYPE REF TO IF_RECIPIENT_BCS,
+      GT_SOLI        TYPE TABLE OF SOLI,
+      GS_SOLI        TYPE SOLI,
+      GV_STATUS      TYPE BCS_RQST,
+      GV_CONTENT     TYPE STRING.
+
+
+START-OF-SELECTION.
+
+
+CREATE OBJECT GO_GBT.
+
+GV_CONTENT = 'Merhabalar, mailime ho#geldiniz'.
+
+GT_SOLI = CL_DOCUMENT_BCS=>STRING_TO_SOLI( IP_STRING = gv_content ).
+
+CALL METHOD GO_GBT->SET_MAIN_HTML
+  EXPORTING
+    CONTENT     =  GT_SOLI.
+
+go_doc_bcs = cl_document_bcs=>CREATE_FROM_MULTIRELATED(
+              I_SUBJECT          = 'Mail Ba#l###'
+              I_MULTIREL_SERVICE = GO_GBT ).
+GO_RECIPIENT = CL_CAM_ADDRESS_BCS=>CREATE_INTERNET_ADDRESS(
+                   I_ADDRESS_STRING = 'onder@gmail.com' ).
+GO_BCS = CL_BCS=>CREATE_PERSISTENT( ).
+GO_BCS->SET_DOCUMENT( I_DOCUMENT = GO_DOC_BCS ).
+GO_BCS->ADD_RECIPIENT(
+  EXPORTING
+    I_RECIPIENT     =     GO_RECIPIENT ).
+
+GV_STATUS = 'N'.
+CALL METHOD GO_BCS->SET_STATUS_ATTRIBUTES
+  EXPORTING
+    I_REQUESTED_STATUS = GV_STATUS .
+GO_BCS->SEND( ).
+
+COMMIT WORK.
