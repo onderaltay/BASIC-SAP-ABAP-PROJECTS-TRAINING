@@ -1,0 +1,202 @@
+*&---------------------------------------------------------------------*
+*& Report ZON_EMAIL_05
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT ZON_EMAIL_05.
+
+DATA: GO_GBT         TYPE REF TO CL_GBT_MULTIRELATED_SERVICE,
+      GO_BCS         TYPE REF TO CL_BCS,
+      GO_DOC_BCS     TYPE REF TO CL_DOCUMENT_BCS,
+      GO_RECIPIENT   TYPE REF TO IF_RECIPIENT_BCS,
+      GT_SOLI        TYPE TABLE OF SOLI,
+      GS_SOLI        TYPE SOLI,
+      GV_STATUS      TYPE BCS_RQST,
+      GV_CONTENT     TYPE STRING.
+
+DATA:GV_ATTACHMENT_SIZE   TYPE SOOD-OBJLEN,
+     GT_I_ATT_CONTENT_HEX TYPE SOLIX_TAB,
+     GV_ATT_CONTENT       TYPE STRING,
+     GV_ATT_LINE TYPE STRING.
+
+DATA: GS_OUTPUTPARAMS  TYPE SFPOUTPUTPARAMS,
+      GV_NAME          TYPE FPNAME,
+      GV_FUNCNAME      TYPE FUNCNAME,
+      GS_DOCPARAMS     TYPE SFPDOCPARAMS,
+      GS_FORMOUTPUT    TYPE FPFORMOUTPUT,
+      GV_OUTPUT_LENGTH TYPE I.
+
+
+
+
+DATA: GT_STOCK TYPE TABLE OF ZON_STOK_LIST,
+      GS_STOCK TYPE          ZON_STOK_LIST.
+
+
+START-OF-SELECTION.
+
+
+CREATE OBJECT GO_GBT.
+
+SELECT * FROM ZON_STOK_LIST INTO TABLE GT_STOCK.
+
+GV_CONTENT =   '<!DOCTYPE html>                                '
+           &&  '    <html>                                     '
+           &&  '      <head>                                   '
+           &&  '        <meta charset="utf-8">                 '
+           &&  '       <style>                                 '
+           &&  '        th {                                   '
+           &&  '              background-color: lightgreen;    '
+           &&  '              border: 3px solid;               '
+           &&  '            }                                  '
+           &&  '        td {                                   '
+           &&  '              background-color: lightblue;     '
+           &&  '              border: 2px solid;               '
+           &&  '           }                                   '
+           &&  '       </style>                                '
+           &&  '      </head>                                  '
+           &&  '      <body>                                   '
+           &&  '        <table>                                '
+           &&  '          <tr>                                 '
+           &&  '             <th>Stok ID</th>                  '
+           &&  '             <th>Stok Ad#</th>                 '
+           &&  '             <th>Stok Miktar#</th>             '
+           &&  '             <th>Stok Konumu</th>              '
+           &&  '             <th>Birim Stok Fiyat#</th>        '
+           &&  '             <th>Birim Stok Maliyeti</th>      '
+           &&  '             <th>Birim Sat## Fiyat#</th>       '
+           &&  '             <th>Sat## Grubu</th>              '
+           &&  '             <th>Ürün Tipi</th>                '
+           &&  '             <th>Ürün Grubu</th>               '
+           &&  '             <th>Sat#lm## Miktar</th>          '
+           &&  '             <th>Sat#lacak Miktar</th>         '
+           &&  '          </tr>                                '.
+
+LOOP AT GT_STOCK INTO GS_STOCK.
+  GV_CONTENT = GV_CONTENT
+           &&  '          <tr>                                 '
+           &&  '             <td>'&& GS_STOCK-STOCK_ID && '</td> '
+           &&  '             <td>'&& GS_STOCK-STOCK_NAME &&'</td>   '
+           &&  '             <td>'&& GS_STOCK-STOCK_QTY && '</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_LOC &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_PRICE &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_COST &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_SELL &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_DIV &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_TYP &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_PRD &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_SOLD &&'</td>     '
+           &&  '             <td>'&& GS_STOCK-STOCK_SALE &&'</td>     '
+           &&  '          </tr>                                '.
+  ENDLOOP.
+  GV_CONTENT = GV_CONTENT
+           &&  '        </table>                               '
+           &&  '      </body>                                  '
+           &&  '    </html>                                    '.
+
+
+GT_SOLI = CL_DOCUMENT_BCS=>STRING_TO_SOLI( IP_STRING = GV_CONTENT ).
+
+CALL METHOD GO_GBT->SET_MAIN_HTML
+  EXPORTING
+    CONTENT     =  GT_SOLI.
+
+GO_DOC_BCS = CL_DOCUMENT_BCS=>CREATE_FROM_MULTIRELATED(
+              I_SUBJECT          = 'Mail Ba#l###'
+              I_MULTIREL_SERVICE = GO_GBT ).
+
+
+GS_OUTPUTPARAMS-PREVIEW  = ''.
+GS_OUTPUTPARAMS-NODIALOG = 'X'.
+GS_OUTPUTPARAMS-DEST     = 'LP01'.
+GS_OUTPUTPARAMS-GETPDF   = 'X'.
+
+CALL FUNCTION 'FP_JOB_OPEN'
+  CHANGING
+    IE_OUTPUTPARAMS       = GS_OUTPUTPARAMS
+* EXCEPTIONS
+*   CANCEL                = 1
+*   USAGE_ERROR           = 2
+*   SYSTEM_ERROR          = 3
+*   INTERNAL_ERROR        = 4
+*   OTHERS                = 5
+          .
+IF SY-SUBRC <> 0.
+* Implement suitable error handling here
+ENDIF.
+
+GV_NAME = 'ZON_ADOBE_FORM01'.
+CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'
+  EXPORTING
+    I_NAME               = GV_NAME    " Form
+  IMPORTING
+    E_FUNCNAME           = GV_FUNCNAME
+*    E_INTERFACE_TYPE     =
+*    EV_FUNCNAME_INBOUND  =
+  .
+*  CATCH CX_FP_API_REPOSITORY.    "
+*  CATCH CX_FP_API_USAGE.    "
+*  CATCH CX_FP_API_INTERNAL.    "
+
+CALL FUNCTION '//1BCDWB/SM00000278'
+  EXPORTING
+    /1BCDWB/DOCPARAMS  = GS_DOCPARAMS
+*    IV_BARCODE         =
+*    IV_HEADER_T1       =
+  IMPORTING
+    /1BCDWB/FORMOUTPUT = GS_FORMOUTPUT
+  EXCEPTIONS
+    USAGE_ERROR        = 1
+    SYSTEM_ERROR       = 2
+    INTERNAL_ERROR     = 3
+    OTHERS             = 4
+  .
+
+
+CALL FUNCTION 'FP_JOB_CLOSE'
+  EXCEPTIONS
+    USAGE_ERROR    = 1
+    SYSTEM_ERROR   = 2
+    INTERNAL_ERROR = 3
+    OTHERS         = 4
+  .
+
+CALL FUNCTION 'SSCMS_XSTRING_TO_BINARY'
+  EXPORTING
+    BUFFER          = GS_FORMOUTPUT-PDF
+  IMPORTING
+    OUTPUT_LENGTH   = GV_OUTPUT_LENGTH
+  TABLES
+    BINARY_TAB      = GT_I_ATT_CONTENT_HEX
+  .
+
+
+GV_ATTACHMENT_SIZE = GV_OUTPUT_LENGTH.
+
+GO_DOC_BCS->ADD_ATTACHMENT(
+  EXPORTING
+    I_ATTACHMENT_TYPE     = 'PDF'
+    I_ATTACHMENT_SUBJECT  = 'Ürün/Stok Listesi'
+    I_ATTACHMENT_SIZE     = GV_ATTACHMENT_SIZE
+    I_ATT_CONTENT_HEX     = GT_I_ATT_CONTENT_HEX ).
+
+
+
+GO_RECIPIENT = CL_CAM_ADDRESS_BCS=>CREATE_INTERNET_ADDRESS(
+                   I_ADDRESS_STRING = 'onder@gmail.com' ).
+GO_BCS = CL_BCS=>CREATE_PERSISTENT( ).
+GO_BCS->SET_DOCUMENT( I_DOCUMENT = GO_DOC_BCS ).
+GO_BCS->ADD_RECIPIENT(
+  EXPORTING
+    I_RECIPIENT     =     GO_RECIPIENT ).
+
+GV_STATUS = 'N'.
+CALL METHOD GO_BCS->SET_STATUS_ATTRIBUTES
+  EXPORTING
+    I_REQUESTED_STATUS = GV_STATUS .
+GO_BCS->SEND( ).
+
+COMMIT WORK.
+IF SY-SUBRC EQ 0.
+   MESSAGE 'Mail Gönderildi' TYPE 'I' DISPLAY LIKE 'S'.
+ENDIF.
