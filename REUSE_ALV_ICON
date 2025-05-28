@@ -1,0 +1,76 @@
+*&---------------------------------------------------------------------*
+*& Report ZOA_DENEME_2
+*&---------------------------------------------------------------------*
+*&
+*&---------------------------------------------------------------------*
+REPORT zoa_deneme_2.
+
+TYPES: BEGIN OF gty_table,
+         icon     TYPE icon_d,
+         id       TYPE int4,
+         customer TYPE char30,
+         location TYPE char20,
+         country  TYPE char2,
+       END OF gty_table.
+
+
+
+DATA: gt_customer TYPE TABLE OF gty_table,
+      gs_customer TYPE gty_table.
+
+DATA: gt_fieldcat TYPE slis_t_fieldcat_alv,
+      gs_fieldcat TYPE slis_fieldcat_alv.
+
+DATA: gs_layout   TYPE slis_layout_alv.
+
+
+gt_customer = VALUE #( ( icon = icon_led_green  id = 001 customer = 'AB Kimya Tic. AÞ.'              location = 'Ýstanbul'  country = 'TR' )
+                       ( icon = icon_led_green  id = 002 customer = 'Atlas Lab. Ltd. Þti.'           location = 'Ýstanbul'  country = 'TR' )
+                       ( icon = icon_led_yellow id = 003 customer = 'Sennheinz Chemicals A.G..'      location = 'Hamburg'   country = 'DE' )
+                       ( icon = icon_led_green  id = 004 customer = 'Özcanlar Tarým Ýlaç Tic. AÞ.'   location = 'Adana'     country = 'TR' )
+                       ( icon = icon_led_red    id = 005 customer = 'John Deere Industries Inc.'     location = 'Cleveland' country = 'US' )
+                       ( icon = icon_led_red    id = 005 customer = 'Max Verstappen Racing N.V.'     location = 'Amsterdam' country = 'NL' )
+                       ( icon = icon_led_yellow id = 006 customer = 'Geralt of Rivia Sword Arts Co.' location = 'Varþova'   country = 'PL' ) ).
+
+START-OF-SELECTION.
+
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'ICON'.
+  gs_fieldcat-icon      = abap_true.
+  gs_fieldcat-col_pos   = 1.
+  gs_fieldcat-seltext_m = 'Durum'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'ID'.
+  gs_fieldcat-col_pos   = 2.
+  gs_fieldcat-seltext_m = 'Müþteri No'.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'CUSTOMER'.
+  gs_fieldcat-col_pos   = 3.
+  gs_fieldcat-seltext_m = 'Müþteri Adý'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'LOCATION'.
+  gs_fieldcat-col_pos   = 4.
+  gs_fieldcat-seltext_m = 'Þehir'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  CLEAR gs_fieldcat.
+  gs_fieldcat-fieldname = 'COUNTRY'.
+  gs_fieldcat-col_pos   = 5.
+  gs_fieldcat-seltext_m = 'Ülke'.
+  APPEND gs_fieldcat TO gt_fieldcat.
+
+  gs_layout-colwidth_optimize = abap_true.
+
+  CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'
+    EXPORTING
+      i_callback_program = sy-repid           " Name of the calling program
+      is_layout          = gs_layout               " List layout specifications
+      it_fieldcat        = gt_fieldcat               " Field catalog with field descriptions
+    TABLES
+      t_outtab           = gt_customer.                " Table with data to be displayed
